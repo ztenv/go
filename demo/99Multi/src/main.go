@@ -1,11 +1,12 @@
 package main
 
 import "fmt"
+import "sub"
 
 
 func main() {
 	fmt.Println("starting main...")
-	nineMultiNine()
+	sub.NineMultiNine()
 	fmt.Println("stopped main...")
 }
 
