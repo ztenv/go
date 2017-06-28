@@ -11,5 +11,9 @@
 
 CURDIR=`pwd`
 export GOPATH="$GOPATH:$CURDIR"
-
-go run $1
+if [ $# == 0 ] 
+then
+    echo "useage:./run.sh go_file"
+else
+    go run $1
+fi
