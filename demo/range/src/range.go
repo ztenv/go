@@ -9,9 +9,18 @@ func main() {
 		array[i] = i
 	}
 
+	//***************************************************
+	//for...
 	for i := 0; i < 10; i++ {
 		fmt.Printf("array[%d]=%d\n", i, array[i])
 	}
+
+	//***************************************************
+	//for..range
+	for index, item := range array {
+		fmt.Printf("array[%d]=%d]\n", index, item)
+	}
+	//***************************************************
 
 	fmt.Println("stopped main")
 }
