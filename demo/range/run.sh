@@ -13,7 +13,7 @@ CURDIR=`pwd`
 export GOPATH="$GOPATH:$CURDIR"
 if [ $# == 0 ] 
 then
-    echo "useage:./run.sh go_file"
+    echo "useage:$0 go_file"
 else
     go run $1
 fi

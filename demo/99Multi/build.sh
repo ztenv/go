@@ -15,5 +15,7 @@ if [ $# == 0 ]
 then
     echo "useage:$0 go_file"
 else
-    go run $1
+    mkdir ./bin
+    cd ./bin
+    go build "../$1"
 fi
