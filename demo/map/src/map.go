@@ -26,6 +26,7 @@ func main() {
 	}
 
 	for k, v := range kv {
+		v = v + ":" + strconv.Itoa(k)
 		fmt.Printf("map[%d]=%s\n", k, v)
 	}
 }
