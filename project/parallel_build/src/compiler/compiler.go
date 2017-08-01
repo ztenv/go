@@ -5,7 +5,7 @@ import (
 	"bytes"
 	"config"
 	"fmt"
-	"github.com/mahonia"
+	"github.com/axgle/mahonia"
 	"io"
 	"os"
 	"os/exec"
