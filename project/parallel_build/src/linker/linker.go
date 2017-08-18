@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"config"
 	"fmt"
-	"github.com/axgle/mahonia"
+	"github.com/mahonia"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -15,7 +15,6 @@ import (
 type ILinker interface {
 	Init(context *config.Context) int
 	Start() int
-	Start2() int
 	Stop() int
 	Wait() int
 }
@@ -45,19 +44,6 @@ func (this *Linker) Start() int {
 	this.fm.Load()
 	os.Chdir(this.context.WorkDir)
 	fileList := this.fm.GetFileList()
-	for item := fileList.Front(); item != nil; item = item.Next() {
-		this.ch <- 1
-		this.wait_group.Add(1)
-		go this.build(item.Value.(string))
-	}
-	return 0
-}
-
-func (this *Linker) Start2() int {
-	fmt.Println("link starting...")
-	this.fm.Load()
-	os.Chdir(this.context.WorkDir)
-	fileList := this.fm.GetFileList()
 	linkCount := 40 //int(math.Ceil(float64(this.fm.GetFileList().Len())/8.0))
 	fileCount := fileList.Len()
 	processCount := 0
@@ -69,7 +55,7 @@ func (this *Linker) Start2() int {
 			buildlist := make([]string, linkCount, linkCount)
 			copy(buildlist, s)
 			this.ch <- 1
-			go this.build2(buildlist)
+			go this.build(buildlist)
 			this.wait_group.Add(1)
 			startCount++
 			fmt.Printf("%d goroutine process %d started\n", startCount, len(buildlist))
@@ -83,7 +69,7 @@ func (this *Linker) Start2() int {
 		buildlist := make([]string, len(s), linkCount)
 		copy(buildlist, s)
 		this.ch <- 1
-		go this.build2(buildlist)
+		go this.build(buildlist)
 		this.wait_group.Add(1)
 		startCount++
 		fmt.Printf("%d goroutine process %d started\n", startCount, len(buildlist))
@@ -105,33 +91,7 @@ func (this *Linker) Wait() int {
 	return 0
 }
 
-func (this *Linker) build(lbm string) {
-	defer this.wait_group.Done()
-	in := bytes.NewBuffer(nil)
-	cmd := exec.Command("cmd", "/K", filepath.Join(this.context.VCDir, "vcvarsall.bat\n"))
-	cmd.Stdin = in
-	var output string
-	if len(this.context.OutDir) > 0 {
-		output = strings.Replace(filepath.Join(this.context.OutDir, string(lbm[strings.LastIndex(lbm, "\\")+1:])), ".obj", ".dll", 1)
-	} else {
-		output = strings.Replace(lbm, ".obj", ".dll", 1)
-	}
-	in.WriteString("link /INCREMENTAL:NO /NOLOGO /DLL /MANIFEST /MANIFESTUAC:\"level='asInvoker' uiAccess='" +
-		"false'\"  /SUBSYSTEM:WINDOWS /OPT:REF /OPT:ICF /LTCG /DYNAMICBASE /NXCOMPAT /MACHINE:X86 /ERRORREPORT:PROMPT" +
-		"  /LIBPATH:\"" + this.context.LibDir + "\" xsdkDBEngine.lib lbmapi.lib kcxpapi.lib encrypt.lib kcxpxa.lib KCBPPacketOpApi.lib  " +
-		"GeneralLBMAPI.lib  odbc1pc.lib KCAS_AuthenticationCheck.lib KSTEncryptd.lib kernel32.lib user32.lib " +
-		"gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib " +
-		"odbccp32.lib odbcbcp.lib bkps.lib sett.lib common.lib base.lib " + lbm + " /OUT:" + output + "\n")
-	out, err := cmd.Output()
-	if err == nil {
-		fmt.Println(this.decoder.ConvertString(string(out)))
-	} else {
-		fmt.Println("link error:", this.decoder.ConvertString(err.Error()))
-	}
-	<-this.ch
-}
-
-func (this *Linker) build2(lbmlist []string) {
+func (this *Linker) build(lbmlist []string) {
 	defer this.wait_group.Done()
 	in := bytes.NewBuffer(nil)
 	os.Chdir(this.context.VCDir)
@@ -149,7 +109,8 @@ func (this *Linker) build2(lbmlist []string) {
 			"  /LIBPATH:\"" + this.context.LibDir + "\" xsdkDBEngine.lib lbmapi.lib kcxpapi.lib encrypt.lib kcxpxa.lib KCBPPacketOpApi.lib  " +
 			"GeneralLBMAPI.lib  odbc1pc.lib KCAS_AuthenticationCheck.lib KSTEncryptd.lib kernel32.lib user32.lib " +
 			"gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib " +
-			"odbccp32.lib odbcbcp.lib bkps.lib sett.lib common.lib base.lib " + lbm + " /OUT:" + output + "\n")
+			"odbccp32.lib odbcbcp.lib bkps.lib sett.lib common.lib base.lib " + lbm + " /OUT:" + output + "\n mt.exe -outputresource:"+
+			output+";#2 -manifest "+output+".manifest\n")
 	}
 	out, err := cmd.Output()
 	if err == nil {
