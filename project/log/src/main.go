@@ -1,15 +1,14 @@
 package main
 
-import "logger"
+import "shlog"
 
 func main() {
-	var logger logger.ILogger = &logger.Logger{}
+	var logger shlog.ILogger = &shlog.Logger{}
 	logger.Init("logdemo.log")
 	defer logger.UnInit()
-	logger.Debug("aaaa1")
-	logger.Info("aaaa2")
-	logger.Warn("aaaa3")
-	logger.Error("bbbbb:%s", "*****")
-	logger.Fatal("aaaaaaafff")
-	logger.Debug("aaaa4")
+	logger.Debug("%d+%d=%d", 1, 2, 3)
+	logger.Info("hello %s", "world")
+	logger.Warn("I %s %s", "see", "you")
+	logger.Error("do you %s", "known")
+	logger.Fatal("%s************%s***********%d", "######", "$$$$$$", 100)
 }

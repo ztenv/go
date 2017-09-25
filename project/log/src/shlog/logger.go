@@ -1,4 +1,4 @@
-package logger
+package shlog
 
 import (
 	"fmt"
@@ -35,13 +35,13 @@ func (this *Logger) Init(logfile string) int {
 		return -1
 	}
 	this.logFile = lf
-	writers := []io.Writer{lf, os.Stdout}
+	writers := []io.Writer{os.Stdout, lf}
 	mw := io.MultiWriter(writers...)
-	this.debugLogger = log.New(mw, "[debug]", log.Lshortfile|log.Ldate|log.Lmicroseconds)
-	this.infoLogger = log.New(mw, "[info]", log.Lshortfile|log.Ldate|log.Lmicroseconds)
-	this.warnLogger = log.New(mw, "[warn]", log.Lshortfile|log.Ldate|log.Lmicroseconds)
-	this.errorLogger = log.New(mw, "[error]", log.Lshortfile|log.Ldate|log.Lmicroseconds)
-	this.fatalLogger = log.New(mw, "[fatal]", log.Lshortfile|log.Ldate|log.Lmicroseconds)
+	this.debugLogger = log.New(mw, "[debug]", log.Ldate|log.Lmicroseconds)
+	this.infoLogger = log.New(mw, "[info]", log.Ldate|log.Lmicroseconds)
+	this.warnLogger = log.New(mw, "[warn]", log.Ldate|log.Lmicroseconds)
+	this.errorLogger = log.New(mw, "[error]", log.Ldate|log.Lmicroseconds)
+	this.fatalLogger = log.New(mw, "[fatal]", log.Ldate|log.Lmicroseconds)
 	return 0
 }
 
@@ -54,35 +54,35 @@ func (this *Logger) UnInit() {
 
 func (this *Logger) Debug(format string, msg ...interface{}) {
 	if msg != nil {
-		this.debugLogger.Printf(format+"\n", msg)
+		this.debugLogger.Printf(format+"\n", msg...)
 	} else {
 		this.debugLogger.Println(format)
 	}
 }
 func (this *Logger) Info(format string, msg ...interface{}) {
 	if msg != nil {
-		this.infoLogger.Printf(format+"\n", msg)
+		this.infoLogger.Printf(format+"\n", msg...)
 	} else {
 		this.infoLogger.Println(format)
 	}
 }
 func (this *Logger) Warn(format string, msg ...interface{}) {
 	if msg != nil {
-		this.warnLogger.Printf(format+"\n", msg)
+		this.warnLogger.Printf(format+"\n", msg...)
 	} else {
 		this.warnLogger.Println(format)
 	}
 }
 func (this *Logger) Error(format string, msg ...interface{}) {
 	if msg != nil {
-		this.errorLogger.Printf(format+"\n", msg)
+		this.errorLogger.Printf(format+"\n", msg...)
 	} else {
 		this.errorLogger.Println(format)
 	}
 }
 func (this *Logger) Fatal(format string, msg ...interface{}) {
 	if msg != nil {
-		this.fatalLogger.Printf(format+"\n", msg)
+		this.fatalLogger.Printf(format+"\n", msg...)
 	} else {
 		this.fatalLogger.Println(format)
 	}
