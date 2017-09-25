@@ -1,15 +1,15 @@
 package linker
 
 import (
-	"bytes"
 	"config"
-	"fmt"
 	"github.com/mahonia"
 	"os"
-	"os/exec"
-	"path/filepath"
-	"strings"
 	"sync"
+	"bytes"
+	"os/exec"
+	"strings"
+	"path/filepath"
+	"shlog"
 )
 
 type ILinker interface {
@@ -26,12 +26,15 @@ type Linker struct {
 	ch         chan int
 	chNumber   int
 	decoder    mahonia.Decoder
+
+	log shlog.ILogger
 }
 
 func (this *Linker) Init(context *config.Context) int {
 	this.context = context
+	this.log=this.context.Log
 	this.fm = &FileManager{}
-	this.fm.Init(this.context.WorkDir)
+	this.fm.Init(this.context)
 	this.wait_group = &sync.WaitGroup{}
 	this.chNumber = this.context.CPUCount
 	this.ch = make(chan int, this.chNumber)
@@ -40,7 +43,7 @@ func (this *Linker) Init(context *config.Context) int {
 	return 0
 }
 func (this *Linker) Start() int {
-	fmt.Println("link starting...")
+	this.log.Info("link starting...")
 	this.fm.Load()
 	os.Chdir(this.context.WorkDir)
 	fileList := this.fm.GetFileList()
@@ -51,6 +54,7 @@ func (this *Linker) Start() int {
 	s := make([]string, 0, linkCount)
 	for item := fileList.Front(); item != nil; item = item.Next() {
 		s = append(s, item.Value.(string))
+		processCount++
 		if len(s)%linkCount == 0 {
 			buildlist := make([]string, linkCount, linkCount)
 			copy(buildlist, s)
@@ -58,11 +62,11 @@ func (this *Linker) Start() int {
 			go this.build(buildlist)
 			this.wait_group.Add(1)
 			startCount++
-			fmt.Printf("%d goroutine process %d started\n", startCount, len(buildlist))
+			this.log.Info("%d goroutine process %d started", startCount, len(buildlist))
+			if  fileCount-processCount < 80 {
+				linkCount = 20
+			}
 			s = make([]string, 0, linkCount)
-		}
-		if processCount++; fileCount-processCount < 80 {
-			linkCount = 20
 		}
 	}
 	if len(s) > 0 {
@@ -72,10 +76,10 @@ func (this *Linker) Start() int {
 		go this.build(buildlist)
 		this.wait_group.Add(1)
 		startCount++
-		fmt.Printf("%d goroutine process %d started\n", startCount, len(buildlist))
+		this.log.Info("%d goroutine process %d started", startCount, len(buildlist))
 		s = make([]string, 0, linkCount)
 	}
-	fmt.Println("All goroutines  started")
+	this.log.Info("All goroutines  started")
 	return 0
 }
 
@@ -87,7 +91,7 @@ func (this *Linker) Stop() int {
 
 func (this *Linker) Wait() int {
 	this.wait_group.Wait()
-	fmt.Println("link done")
+	this.log.Info("link done")
 	return 0
 }
 
@@ -114,9 +118,9 @@ func (this *Linker) build(lbmlist []string) {
 	}
 	out, err := cmd.Output()
 	if err == nil {
-		fmt.Println(this.decoder.ConvertString(string(out)))
+		this.log.Info(this.decoder.ConvertString(string(out)))
 	} else {
-		fmt.Println("link error:", this.decoder.ConvertString(err.Error()))
+		this.log.Error("link error:", this.decoder.ConvertString(err.Error()))
 	}
 	<-this.ch
 }

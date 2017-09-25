@@ -1,7 +1,7 @@
 package config
 
 import (
-	"fmt"
+	"shlog"
 )
 
 type Context struct {
@@ -11,13 +11,15 @@ type Context struct {
 	OutDir   string
 	CPUCount int
 	IsCompileAll string
+
+	Log shlog.ILogger
 }
 
 func (this *Context) Print() {
-	fmt.Printf("Workdir:%s\n", this.WorkDir)
-	fmt.Printf("LibDir:%s\n", this.LibDir)
-	fmt.Printf("VCDir:%s\n", this.VCDir)
-	fmt.Printf("OutDir:%s\n", this.OutDir)
-	fmt.Printf("CPUCount:%d\n", this.CPUCount)
-	fmt.Printf("IsCompileAll:%s\n",this.IsCompileAll)
+	this.Log.Info("Workdir:%s", this.WorkDir)
+	this.Log.Info("LibDir:%s", this.LibDir)
+	this.Log.Info("VCDir:%s", this.VCDir)
+	this.Log.Info("OutDir:%s", this.OutDir)
+	this.Log.Info("CPUCount:%d", this.CPUCount)
+	this.Log.Info("IsCompileAll:%s",this.IsCompileAll)
 }

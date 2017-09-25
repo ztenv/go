@@ -1,11 +1,11 @@
 package service
 import(
-	"fmt"
 	"os/exec"
 	"github.com/mahonia"
 	"config"
 	"os"
 	"bytes"
+	"shlog"
 )
 
 type Icleaner interface{
@@ -17,10 +17,12 @@ type Icleaner interface{
 type cleaner struct {
 	context *config.Context
 	decoder    mahonia.Decoder
+	log shlog.ILogger
 }
 
 func (this *cleaner)Init(context *config.Context) int{
 	this.context=context
+	this.log=this.context.Log
 	this.decoder = mahonia.NewDecoder("gb18030")
 	return 0
 }
@@ -37,10 +39,10 @@ func (this *cleaner)CleanInterFiles()int{
 	in.WriteString("del *.exp\n del *.dll.manifest\n")
 	out,err:=cmd.Output()
 	if err!=nil{
-		fmt.Printf("CleanInterFiles error:%s",this.decoder.ConvertString(err.Error()))
+		this.log.Error("CleanInterFiles error:%s",this.decoder.ConvertString(err.Error()))
 		return -1
 	}else{
-		fmt.Printf("CleanInterFiles:%s",this.decoder.ConvertString(string(out)))
+		this.log.Info("CleanInterFiles:%s",this.decoder.ConvertString(string(out)))
 	}
 	return 0
 }

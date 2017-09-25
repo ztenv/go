@@ -4,17 +4,17 @@ import (
 	"compiler"
 	"config"
 	"flag"
-	"fmt"
 	"linker"
 	"os"
 	"runtime"
 	"time"
 	"strings"
 	"path/filepath"
+	"shlog"
 )
 
 type ISerice interface {
-	Init() int
+	Init(log shlog.ILogger) int
 	Run() int
 	Clean() int
 
@@ -23,9 +23,11 @@ type ISerice interface {
 }
 
 type Service struct {
+	//copysrc copysrc.ICopysrc
 	compiler compiler.ICompiler
 	linker   linker.ILinker
 	context  *config.Context
+	log shlog.ILogger
 	clean Icleaner
 }
 
@@ -47,7 +49,7 @@ func (this *Service)buildDir(work_dir *string,lib_dir *string,vc_dir *string,out
 	}
 	_,err:=os.Stat(*work_dir)
 	if err!=nil{
-		fmt.Printf("work_dir:%s does not exists,please check the WorkDir again!\n",*work_dir)
+		this.log.Error("open work_dir:%s error:%s,please check the WorkDir again!",*work_dir,err.Error())
 		return -1
 	}
 	if len(*lib_dir)>2 && strings.Index(*lib_dir,":")==-1{
@@ -58,7 +60,7 @@ func (this *Service)buildDir(work_dir *string,lib_dir *string,vc_dir *string,out
 	}
 	_,err=os.Stat(*vc_dir)
 	if err!=nil{
-		fmt.Printf("vc_dir:%s does not exist,please check the VCDir again!\n",*vc_dir)
+		this.log.Error("open vc_dir:%s error:%s",*vc_dir,err.Error())
 		return -2
 	}
 
@@ -68,12 +70,12 @@ func (this *Service)buildDir(work_dir *string,lib_dir *string,vc_dir *string,out
 		}
 		_, err = os.Stat(*out_dir)
 		if err != nil {
-			fmt.Printf("out_dir:%s does not exist,will be creating...\n", *out_dir)
+			this.log.Error("out_dir:%s does not exist,will be creating...", *out_dir)
 			err = os.MkdirAll(*out_dir, 777)
 			if err == nil {
-				fmt.Printf("out_dir:%s created successfully!\n", *out_dir)
+				this.log.Info("out_dir:%s created successfully!\n", *out_dir)
 			} else {
-				fmt.Printf("out_dir:%s created error:%s\n", *out_dir, err.Error())
+				this.log.Error("out_dir:%s created error:%s\n", *out_dir, err.Error())
 				return -3
 			}
 		}
@@ -81,9 +83,12 @@ func (this *Service)buildDir(work_dir *string,lib_dir *string,vc_dir *string,out
 	return 0
 }
 
-func (this *Service) Init() int {
+func (this *Service) Init(log shlog.ILogger) int {
+	this.log=log
+
 	work_dir,lib_dir,vc_dir,out_dir,compile_all:=this.parseArgs()
 	if res:=this.buildDir(work_dir,lib_dir,vc_dir,out_dir);res!=0{
+		log.Error("buildDir error,please check")
 		return res
 	}
 	this.context = &config.Context{WorkDir: *work_dir,
@@ -91,8 +96,13 @@ func (this *Service) Init() int {
 		VCDir:    *vc_dir,
 		OutDir:   *out_dir,
 		CPUCount: runtime.NumCPU(),
-		IsCompileAll:strings.ToLower(*compile_all)}
+		IsCompileAll:strings.ToLower(*compile_all),
+		Log:log}
 	this.context.Print()
+
+	//this.copysrc=new(copysrc.Copysrc)
+	//this.copysrc.Init(this.context)
+	//this.copysrc.Run()
 
 	this.compiler = new(compiler.Compiler)
 	this.compiler.Init(this.context)
@@ -108,19 +118,22 @@ func (this *Service) Run() int {
 	this.compiler.Wait()
 	this.compiler.Stop()
 	stopTime := time.Now()
-	fmt.Printf("compile used time:%d seconds\n", stopTime.Local().Unix()-startTime.Local().Unix())
+	this.log.Info("compile used time:%d seconds", stopTime.Local().Unix()-startTime.Local().Unix())
 
 	startTime = time.Now()
 	this.linker.Start()
 	this.linker.Wait()
 	this.linker.Stop()
 	stopTime = time.Now()
-	fmt.Printf("link used time:%d seconds\n", stopTime.Local().Unix()-startTime.Local().Unix())
+	this.log.Info("link used time:%d seconds", stopTime.Local().Unix()-startTime.Local().Unix())
 
 	this.clean=&cleaner{}
 	this.clean.Init(this.context)
 	return 0
 }
-func (this *Service)Clean()int{
-	return this.clean.CleanInterFiles()
+func (this *Service)Clean()int {
+	if this.clean != nil{
+		return this.clean.CleanInterFiles()
+	}
+	return -1
 }

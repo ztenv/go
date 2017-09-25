@@ -4,22 +4,34 @@ import (
 	"fmt"
 	"service"
 	"time"
+	"shlog"
 )
 var _VERSION_ string="0.0.0.0"
 func main() {
-	fmt.Println("verion:="+_VERSION_)
+	log,err:=initLog()
+	if err!=nil{
+		fmt.Printf("init log error:%s",err.Error())
+		return
+	}
+	defer log.UnInit()
+	log.Info("Version:=%s",_VERSION_)
 	startTime := time.Now()
-	fmt.Printf("Building start at:%s\n", startTime.Format("2006-01-02 15:04:05"))
+	log.Info("Building start at:%s",startTime.Format("2006-01-02 15:04:05"))
 	{
 		srv := &service.Service{}
 		defer srv.Clean()
-		if srv.Init() != 0 {
-			fmt.Println("service Init error,please check your config");
+		if srv.Init(log) != 0 {
+			log.Fatal("Service init error,please check your config")
 		}
 		srv.Run()
 		stopTime := time.Now()
-		fmt.Printf("Building stop at:%s\n", stopTime.Format("2006-01-02 15:04:05"))
-		fmt.Printf("time used:%d seconds\n", stopTime.Local().Unix()-startTime.Local().Unix())
+		log.Info("Building stop at:%s",stopTime.Format("2006-01-02 15:04:05"))
+		log.Info("Build time used:%d seconds",stopTime.Local().Unix()-startTime.Local().Unix())
 	}
-	fmt.Println("verion:="+_VERSION_)
+}
+
+func initLog() (shlog.ILogger,error){
+	var loger shlog.ILogger=&shlog.Logger{}
+	res:=loger.Init("BuildACCT"+time.Now().Format("20060102150405")+".log")
+	return loger,res
 }

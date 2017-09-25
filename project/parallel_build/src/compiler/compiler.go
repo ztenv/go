@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"bytes"
 	"config"
-	"fmt"
 	"github.com/mahonia"
 	"io"
 	"os"
@@ -14,6 +13,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"shlog"
 )
 
 type ICompiler interface {
@@ -27,6 +27,8 @@ type Compiler struct {
 	context   *config.Context
 	waitGroup *sync.WaitGroup
 	decoder   mahonia.Decoder
+
+	log shlog.ILogger
 }
 
 func (this *Compiler) formatMakefile() int {
@@ -46,10 +48,10 @@ func (this *Compiler) formatMakefile() int {
 						this.context.LibDir = this.decoder.ConvertString(filepath.Join(linestr[strings.Index(linestr, "=")+1:], "\\lib"))
 						_,err:=os.Stat(this.context.LibDir)
 						if err!=nil{
-							fmt.Printf("LibDir error:%s\n",err.Error())
+							this.log.Error("LibDir error:%s",err.Error())
 							return -1
 						}else{
-							fmt.Printf("LibDir=%s\n", this.context.LibDir)
+							this.log.Info("LibDir=%s", this.context.LibDir)
 						}
 					}
 					if len(this.context.OutDir)==0{
@@ -58,11 +60,11 @@ func (this *Compiler) formatMakefile() int {
 						if err!=nil{
 							err=os.MkdirAll(this.context.OutDir,777);
 							if err!=nil{
-								fmt.Printf("Create OutDir error:%s\n",err.Error())
+								this.log.Error("Create OutDir error:%s",err.Error())
 								return -1
 							}
 						}else {
-						fmt.Printf("OutDir=%s\n", this.context.OutDir)
+						this.log.Info("OutDir=%s", this.context.OutDir)
 						}
 					}
 				}else if strings.Index(linestr, "SRC_DIR") != -1 && strings.Index(linestr, "lbm") != -1 && strings.LastIndex(linestr, "base.lib") != -1 {
@@ -71,11 +73,11 @@ func (this *Compiler) formatMakefile() int {
 				wr.WriteString(linestr + "\n")
 			}
 		} else {
-			fmt.Printf("create file:%s error:%s\n", filepath.Join(this.context.WorkDir, "\\src\\makefile.new"), werr.Error())
+			this.log.Error("create file:%s error:%s", filepath.Join(this.context.WorkDir, "\\src\\makefile.new"), werr.Error())
 			return -1
 		}
 	} else {
-		fmt.Printf("open file:%s error:%s\n", filepath.Join(this.context.WorkDir, "\\src\\makefile"), err.Error())
+		this.log.Error("open file:%s error:%s", filepath.Join(this.context.WorkDir, "\\src\\makefile"), err.Error())
 		return -1
 	}
 	return 0
@@ -88,9 +90,9 @@ func (this *Compiler) processMakefile() int {
 	cmd.Stdin = in
 	out, err := cmd.Output()
 	if err == nil {
-		fmt.Printf("create makefile :%s\n", this.decoder.ConvertString(string(out)))
+		this.log.Info("create makefile :%s", this.decoder.ConvertString(string(out)))
 	} else {
-		fmt.Printf("create makefile error:%s\n", this.decoder.ConvertString(err.Error()))
+		this.log.Error("create makefile error:%s", this.decoder.ConvertString(err.Error()))
 	}
 	this.formatMakefile()
 	os.Remove(filepath.Join(this.context.WorkDir, "\\src\\makefile"))
@@ -106,9 +108,9 @@ func (this *Compiler) processMakefile() int {
 	out, err = cmd.Output()
 
 	if err == nil {
-		fmt.Printf("copy makefile:%s\n", this.decoder.ConvertString(string(out)))
+		this.log.Info("copy makefile:%s", this.decoder.ConvertString(string(out)))
 	} else {
-		fmt.Printf("copy makefile error:%s\n", this.decoder.ConvertString(err.Error()))
+		this.log.Error("copy makefile error:%s", this.decoder.ConvertString(err.Error()))
 		return -1
 	}
 	return 0
@@ -116,6 +118,7 @@ func (this *Compiler) processMakefile() int {
 
 func (this *Compiler) Init(context *config.Context) int {
 	this.context = context
+	this.log=this.context.Log
 	this.waitGroup = new(sync.WaitGroup)
 	this.decoder = mahonia.NewDecoder("gb18030")
 	this.processMakefile()
@@ -134,31 +137,30 @@ func (this *Compiler) compile() int {
 
 	out, err := cmd.Output()
 	if err == nil {
-		fmt.Printf("compile info:%s\n", this.decoder.ConvertString(string(out)))
+		this.log.Info("compile info:%s", this.decoder.ConvertString(string(out)))
 	} else {
-		fmt.Printf("compile error:%s\n", this.decoder.ConvertString(err.Error()))
+		this.log.Error("compile error:%s", this.decoder.ConvertString(err.Error()))
 	}
-
 	return 0
 }
 
 func (this *Compiler) Start() int {
-	fmt.Println("Compiler is starting....")
+	this.log.Info("Compiler is starting....")
 	this.waitGroup.Add(1)
 	go this.compile()
-	fmt.Println("Compiler started")
+	this.log.Info("Compiler started")
 	return 0
 }
 
 func (this *Compiler) Wait() int {
-	fmt.Println("Compiler is waiting...")
+	this.log.Info("Compiler is waiting...")
 	this.waitGroup.Wait()
-	fmt.Println("Compiler waited")
+	this.log.Info("Compiler waited")
 	return 0
 }
 
 func (this *Compiler) Stop() int {
-	fmt.Println("Compiler is stopping...")
-	fmt.Println("Compiler stopped")
+	this.log.Info("Compiler is stopping...")
+	this.log.Info("Compiler stopped")
 	return 0
 }

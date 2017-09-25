@@ -2,14 +2,15 @@ package linker
 
 import (
 	"container/list"
-	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
+	"config"
+	"shlog"
 )
 
 type IFileManager interface {
-	Init(work_dir string) int
+	Init(context *config.Context) int
 	GetFileList() *list.List
 	Load() int
 	ReLoad() int
@@ -21,27 +22,28 @@ type lbm_dir struct {
 	sett_lbm_idr string
 }
 
-func (lbm *lbm_dir) print() {
-	fmt.Println("lbm dirs:")
-	fmt.Println(lbm.base_lbm_dir)
-	fmt.Println(lbm.bkps_lbm_dir)
-	fmt.Println(lbm.sett_lbm_idr)
-}
-
 type FileManager struct {
+	context *config.Context
 	Work_Dir string
 	lbmdir   *lbm_dir
 	LBM_File *list.List
+	log shlog.ILogger
 }
 
-func (fm *FileManager) Init(work_dir string) int {
-	fm.Work_Dir = work_dir
+func (fm *FileManager) Init(context *config.Context) int {
+	fm.context=context
+	fm.log=fm.context.Log
+	fm.Work_Dir = fm.context.WorkDir
 	fm.LBM_File = list.New()
 	fm.lbmdir = &lbm_dir{base_lbm_dir: filepath.Join(fm.Work_Dir, "src\\base\\lbm\\"),
 		bkps_lbm_dir: filepath.Join(fm.Work_Dir, "src\\bkps\\lbm\\"),
 		sett_lbm_idr: filepath.Join(fm.Work_Dir, "src\\sett\\lbm\\")}
-	fmt.Println("work_dir=", fm.Work_Dir)
-	fm.lbmdir.print()
+	fm.log.Info("work_dir=%s", fm.Work_Dir)
+
+	fm.log.Info("lbm dirs:")
+	fm.log.Info(fm.lbmdir.base_lbm_dir)
+	fm.log.Info(fm.lbmdir.bkps_lbm_dir)
+	fm.log.Info(fm.lbmdir.sett_lbm_idr)
 	return 0
 }
 
@@ -64,7 +66,7 @@ func (fm *FileManager) scanFile(file_dir string) {
 		return nil
 	})
 	if err != nil {
-		fmt.Println("err:", err)
+		fm.log.Error("scanFile err:%s", err.Error())
 	}
 }
 
@@ -72,26 +74,26 @@ func (fm *FileManager) scanLBMFile() {
 	fm.scanFile(fm.lbmdir.base_lbm_dir)
 	fm.scanFile(fm.lbmdir.bkps_lbm_dir)
 	fm.scanFile(fm.lbmdir.sett_lbm_idr)
-	fmt.Printf("Scaned %d LBM files\n", fm.LBM_File.Len())
+	fm.log.Info("Scaned %d LBM files", fm.LBM_File.Len())
 }
 
 func (fm *FileManager) Load() int {
-	fmt.Println("FileManager is loading...")
+	fm.log.Info("FileManager is loading...")
 	fm.scanLBMFile()
-	fmt.Println("FileManager loaded")
+	fm.log.Info("FileManager loaded")
 	return 0
 }
 
 func (fm *FileManager) ReLoad() int {
 	fm.LBM_File = list.New()
-	fmt.Println("FileManager is reloading...")
+	fm.log.Info("FileManager is reloading...")
 	fm.scanLBMFile()
-	fmt.Println("FileManager reloaded")
+	fm.log.Info("FileManager reloaded")
 	return 0
 }
 func (fm *FileManager) UnInit() int {
-	fmt.Println("FileManager is unloading...")
+	fm.log.Info("FileManager is unloading...")
 	fm.LBM_File = list.New()
-	fmt.Println("FileManager unloaded")
+	fm.log.Info("FileManager unloaded")
 	return 0
 }
