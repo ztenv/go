@@ -43,8 +43,8 @@ func (this *Linker) Init(context *config.Context) int {
 	return 0
 }
 func (this *Linker) Start() int {
-	this.log.Info("link starting...")
-	this.fm.Load()
+	this.log.Info("link is starting...")
+	res:=this.fm.Load()
 	os.Chdir(this.context.WorkDir)
 	fileList := this.fm.GetFileList()
 	linkCount := 40 //int(math.Ceil(float64(this.fm.GetFileList().Len())/8.0))
@@ -80,13 +80,44 @@ func (this *Linker) Start() int {
 		s = make([]string, 0, linkCount)
 	}
 	this.log.Info("All goroutines  started")
-	return 0
+	return res
+}
+func (this *Linker) scanLBMDll()int{
+		var res int=0
+		err := filepath.Walk(this.context.OutDir, func(path string, f os.FileInfo, err error) error {
+		if f == nil {
+			return err
+		}
+		if f.IsDir() {
+			return nil
+		}
+		if strings.HasSuffix(path, ".dll") {
+			res+=1
+		}
+		return nil
+	})
+	if err != nil {
+		this.log.Error("scanFile err:%s", err.Error())
+	}
+	return res
+}
+func (this *Linker) checkBuildResult() int{
+	buildLBMCount:=this.scanLBMDll()
+	this.log.Info("scand %d LBM source files,linked %d LBM dll files\n",this.fm.GetFileList().Len(),buildLBMCount)
+	if(this.fm.GetFileList().Len()<=buildLBMCount){
+		this.log.Info("@_@_@_@_@_@_@_@_@_@_@_@Build ACCT successfully!!@_@_@_@_@_@_@_@_@_@_@_@\n")
+		return 0
+	}else{
+		this.log.Info("^_^_^_^_^_^_^_^_^_^_^_^Build ACCT failed!!^_^_^_^_^_^_^_^_^_^_^_^\n")
+		return -1
+	}
 }
 
 func (this *Linker) Stop() int {
+	res:=this.checkBuildResult()
 	this.fm.UnInit()
 	close(this.ch)
-	return 0
+	return res
 }
 
 func (this *Linker) Wait() int {

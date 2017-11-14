@@ -70,7 +70,7 @@ func (this *Service)buildDir(work_dir *string,lib_dir *string,vc_dir *string,out
 		}
 		_, err = os.Stat(*out_dir)
 		if err != nil {
-			this.log.Error("out_dir:%s does not exist,will be creating...", *out_dir)
+			this.log.Warn("out_dir:%s does not exist,will be creating...", *out_dir)
 			err = os.MkdirAll(*out_dir, 777)
 			if err == nil {
 				this.log.Info("out_dir:%s created successfully!\n", *out_dir)
@@ -84,10 +84,10 @@ func (this *Service)buildDir(work_dir *string,lib_dir *string,vc_dir *string,out
 }
 
 func (this *Service) Init(log shlog.ILogger) int {
+	var res int=0
 	this.log=log
-
 	work_dir,lib_dir,vc_dir,out_dir,compile_all:=this.parseArgs()
-	if res:=this.buildDir(work_dir,lib_dir,vc_dir,out_dir);res!=0{
+	if res=this.buildDir(work_dir,lib_dir,vc_dir,out_dir);res!=0{
 		log.Error("buildDir error,please check")
 		return res
 	}
@@ -105,31 +105,35 @@ func (this *Service) Init(log shlog.ILogger) int {
 	//this.copysrc.Run()
 
 	this.compiler = new(compiler.Compiler)
-	this.compiler.Init(this.context)
+	res=this.compiler.Init(this.context)
 	this.linker = new(linker.Linker)
-	this.linker.Init(this.context)
-	return 0
+	res|=this.linker.Init(this.context)
+	return res
 }
 
 func (this *Service) Run() int {
-
+	var res int=0
 	startTime := time.Now()
-	this.compiler.Start()
-	this.compiler.Wait()
-	this.compiler.Stop()
+	if res=this.compiler.Start();res==0 {
+		res |= this.compiler.Wait()
+		res |= this.compiler.Stop()
+	}
 	stopTime := time.Now()
 	this.log.Info("compile used time:%d seconds", stopTime.Local().Unix()-startTime.Local().Unix())
 
-	startTime = time.Now()
-	this.linker.Start()
-	this.linker.Wait()
-	this.linker.Stop()
-	stopTime = time.Now()
-	this.log.Info("link used time:%d seconds", stopTime.Local().Unix()-startTime.Local().Unix())
+	if res==0 {
+		startTime = time.Now()
+		if res |= this.linker.Start();res==0 {
+			res |= this.linker.Wait()
+			res |= this.linker.Stop()
+		}
+		stopTime = time.Now()
+		this.log.Info("link used time:%d seconds", stopTime.Local().Unix()-startTime.Local().Unix())
+	}
 
 	this.clean=&cleaner{}
 	this.clean.Init(this.context)
-	return 0
+	return res
 }
 func (this *Service)Clean()int {
 	if this.clean != nil{

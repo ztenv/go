@@ -93,8 +93,11 @@ func (this *Compiler) processMakefile() int {
 		this.log.Info("create makefile :%s", this.decoder.ConvertString(string(out)))
 	} else {
 		this.log.Error("create makefile error:%s", this.decoder.ConvertString(err.Error()))
+		return -1
 	}
-	this.formatMakefile()
+	if res:=this.formatMakefile();res!=0{
+		return res //formatMakefile error
+	}
 	os.Remove(filepath.Join(this.context.WorkDir, "\\src\\makefile"))
 	os.Rename(filepath.Join(this.context.WorkDir, "\\src\\makefile.new"), filepath.Join(this.context.WorkDir, "\\src\\makefile"))
 	in.Reset()
@@ -111,7 +114,7 @@ func (this *Compiler) processMakefile() int {
 		this.log.Info("copy makefile:%s", this.decoder.ConvertString(string(out)))
 	} else {
 		this.log.Error("copy makefile error:%s", this.decoder.ConvertString(err.Error()))
-		return -1
+		return -2
 	}
 	return 0
 }
@@ -121,8 +124,7 @@ func (this *Compiler) Init(context *config.Context) int {
 	this.log=this.context.Log
 	this.waitGroup = new(sync.WaitGroup)
 	this.decoder = mahonia.NewDecoder("gb18030")
-	this.processMakefile()
-	return 0
+	return this.processMakefile()
 }
 
 func (this *Compiler) compile() int {
@@ -140,6 +142,7 @@ func (this *Compiler) compile() int {
 		this.log.Info("compile info:%s", this.decoder.ConvertString(string(out)))
 	} else {
 		this.log.Error("compile error:%s", this.decoder.ConvertString(err.Error()))
+		return -1
 	}
 	return 0
 }
@@ -153,7 +156,7 @@ func (this *Compiler) Start() int {
 }
 
 func (this *Compiler) Wait() int {
-	this.log.Info("Compiler is waiting...")
+	this.log.Info("Compiler is running...,please wait")
 	this.waitGroup.Wait()
 	this.log.Info("Compiler waited")
 	return 0
