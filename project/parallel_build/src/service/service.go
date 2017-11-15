@@ -34,9 +34,10 @@ type Service struct {
 func (this *Service) parseArgs()(*string,*string,*string,*string,*string){
 	workdir, _ := os.Getwd()
 	work_dir := flag.String("WorkDir", filepath.Join(workdir,"..\\"), "--WorkDir=[WorkDir:absolute path or relative path]")
-	lib_dir := flag.String("LibDir","" , "--LibDir=[KBSS LibDir:default from the makefile's KCBP_DIR]")
+	lib_dir := flag.String("LibDir","" , "--LibDir=[KBSS LibDir:default will be set :$(KCBP_DIR)\\lib\\]")
 	vc_dir := flag.String("VCDir", "", "--VCDir=[vcvarsall.bat file dir:absolute path or relative path]")
-	out_dir := flag.String("OutDir", "", "--OutDir=[OutDir:absolute path or relative path]")
+	out_dir := flag.String("OutDir", "", "--OutDir=[OutDir:absolute path or relative path.default " +
+		"will be set :$(KCBP_DIR)\\kbsslbm\\]")
 	compile_all:=flag.String("CompileAll","true","--CompileAll=[true|false]")
 	flag.Parse()
 	return work_dir,lib_dir,vc_dir,out_dir,compile_all
