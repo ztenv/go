@@ -2,8 +2,8 @@ package service
 import(
 	"os/exec"
 	"github.com/mahonia"
-	"config"
 	"os"
+	"config"
 	"bytes"
 	"shlog"
 )
@@ -32,17 +32,21 @@ func (this *cleaner)UnInit()int{
 }
 
 func (this *cleaner)CleanInterFiles()int{
+	this.log.Info("cleaning outdir:%s",this.context.OutDir)
 	os.Chdir(this.context.OutDir)
 	in:=bytes.NewBuffer(nil)
 	cmd:=exec.Command("cmd","/K","del *.lib\n")
 	cmd.Stdin=in
 	in.WriteString("del *.exp\n del *.dll.manifest\n")
 	out,err:=cmd.Output()
+	res:=0
 	if err!=nil{
 		this.log.Error("CleanInterFiles error:%s",this.decoder.ConvertString(err.Error()))
-		return -1
+		res=-1
 	}else{
 		this.log.Info("CleanInterFiles:%s",this.decoder.ConvertString(string(out)))
+		res=0
 	}
-	return 0
+	this.log.Info("Outdir is cleaned")
+	return res
 }

@@ -17,7 +17,6 @@ type ISerice interface {
 	Init(log shlog.ILogger) int
 	Run() int
 	Clean() int
-
 	parseArgs()(*string,*string,*string,*string,*string)
 	buildDir(work_dir *string,lib_dir *string,vc_dir *string,out_dir *string) int
 }
@@ -114,13 +113,16 @@ func (this *Service) Init(log shlog.ILogger) int {
 
 func (this *Service) Run() int {
 	var res int=0
-	startTime := time.Now()
+	startTime:= time.Now()
+	stopTime:=time.Now()
+
 	if res=this.compiler.Start();res==0 {
 		res |= this.compiler.Wait()
 		res |= this.compiler.Stop()
+		stopTime = time.Now()
+		this.log.Info("compile (%s,%s) used time:%d seconds",startTime.Format("2006-01-02 15:04:05"),
+			stopTime.Format("2006-01-02 15:04:05"),stopTime.Local().Unix()-startTime.Local().Unix())
 	}
-	stopTime := time.Now()
-	this.log.Info("compile used time:%d seconds", stopTime.Local().Unix()-startTime.Local().Unix())
 
 	if res==0 {
 		startTime = time.Now()
@@ -129,7 +131,8 @@ func (this *Service) Run() int {
 			res |= this.linker.Stop()
 		}
 		stopTime = time.Now()
-		this.log.Info("link used time:%d seconds", stopTime.Local().Unix()-startTime.Local().Unix())
+		this.log.Info("link (%s,%s) used time:%d seconds",startTime.Format("2006-01-02 15:04:05"),
+			stopTime.Format("2006-01-02 15:04:05"),stopTime.Local().Unix()-startTime.Local().Unix())
 	}
 
 	this.clean=&cleaner{}

@@ -17,21 +17,24 @@ func main() {
 	var res int=0
 	defer log.UnInit()
 	log.Info("Version:=%s",_VERSION_)
-	startTime := time.Now()
-	log.Info("Building start at:%s",startTime.Format("2006-01-02 15:04:05"))
+	startTime:= time.Now()
+	log.Info("Building starts at:%s",startTime.Format("2006-01-02 15:04:05"))
 	{
-		srv := &service.Service{}
-		defer srv.Clean()
-		if res=srv.Init(log);res != 0 {
+		buildService:= &service.Service{}
+		defer buildService.Clean()//出错不清理生成的.lib文件
+		if res=buildService.Init(log);res != 0 {
 			log.Fatal("Service init error,please check your config")
 		}else {
-			res = srv.Run()
+			res = buildService.Run()
 			stopTime := time.Now()
 			log.Info("Building stop at:%s", stopTime.Format("2006-01-02 15:04:05"))
 			log.Info("Building used time:%d seconds", stopTime.Local().Unix()-startTime.Local().Unix())
 		}
 	}
-	os.Exit(res)
+	if(res!=0) {
+		log.UnInit()//出错，则显示调用日志卸载，否则golang将不会调用
+		os.Exit(res)
+	}
 }
 
 func initLog() (shlog.ILogger,error){
