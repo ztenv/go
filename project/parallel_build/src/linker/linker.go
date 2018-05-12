@@ -130,7 +130,7 @@ func (this *Linker) build(lbmlist []string) {
 	defer this.wait_group.Done()
 	in := bytes.NewBuffer(nil)
 	os.Chdir(this.context.VCDir)
-	cmd := exec.Command("cmd", "/K", "vcvarsall.bat\n")
+	cmd := exec.Command("cmd", "/K", "vcvarsall.bat",this.context.Platform,"\n")
 	cmd.Stdin = in
 	for _, lbm := range lbmlist {
 		var output string
@@ -140,8 +140,9 @@ func (this *Linker) build(lbmlist []string) {
 			output = strings.Replace(lbm, ".obj", ".dll", 1)
 		}
 		in.WriteString("link /INCREMENTAL:NO /NOLOGO /DLL /MANIFEST /MANIFESTUAC:\"level='asInvoker' uiAccess='" +
-			"false'\"  /SUBSYSTEM:WINDOWS /OPT:REF /OPT:ICF /LTCG /DYNAMICBASE /NXCOMPAT /MACHINE:X86 /ERRORREPORT:PROMPT" +
-			"  /LIBPATH:\"" + this.context.LibDir + "\" xsdkDBEngine.lib lbmapi.lib kcxpapi.lib encrypt.lib kcxpxa.lib KCBPPacketOpApi.lib  " +
+			"false'\"  /SUBSYSTEM:WINDOWS /OPT:REF /OPT:ICF /LTCG /DYNAMICBASE /NXCOMPAT /MACHINE:"+
+			strings.ToUpper(this.context.Platform)+" /ERRORREPORT:PROMPT /LIBPATH:\"" + this.context.LibDir +
+			"\" xsdkDBEngine.lib lbmapi.lib kcxpapi.lib encrypt.lib kcxpxa.lib KCBPPacketOpApi.lib  " +
 			"GeneralLBMAPI.lib  odbc1pc.lib KCAS_AuthenticationCheck.lib KSTEncryptd.lib kernel32.lib user32.lib " +
 			"gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib " +
 			"odbccp32.lib odbcbcp.lib bkps.lib sett.lib common.lib base.lib " + lbm + " /OUT:" + output + "\n mt.exe -outputresource:"+

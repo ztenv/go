@@ -30,16 +30,17 @@ type Service struct {
 	clean Icleaner
 }
 
-func (this *Service) parseArgs()(*string,*string,*string,*string,*string){
+func (this *Service) parseArgs()(*string,*string,*string,*string,*string,*string){
 	workdir, _ := os.Getwd()
 	work_dir := flag.String("WorkDir", filepath.Join(workdir,"..\\"), "--WorkDir=[WorkDir:absolute path or relative path]")
 	lib_dir := flag.String("LibDir","" , "--LibDir=[KBSS LibDir:default will be set :$(KCBP_DIR)\\lib\\]")
 	vc_dir := flag.String("VCDir", "", "--VCDir=[vcvarsall.bat file dir:absolute path or relative path]")
+	platform:=flag.String("Platform","x86","--Platform=[x86|x64]")
 	out_dir := flag.String("OutDir", "", "--OutDir=[OutDir:absolute path or relative path.default " +
 		"will be set :$(KCBP_DIR)\\kbsslbm\\]")
 	compile_all:=flag.String("CompileAll","true","--CompileAll=[true|false]")
 	flag.Parse()
-	return work_dir,lib_dir,vc_dir,out_dir,compile_all
+	return work_dir,lib_dir,vc_dir,platform,out_dir,compile_all
 }
 
 func (this *Service)buildDir(work_dir *string,lib_dir *string,vc_dir *string,out_dir *string)int{
@@ -86,7 +87,7 @@ func (this *Service)buildDir(work_dir *string,lib_dir *string,vc_dir *string,out
 func (this *Service) Init(log shlog.ILogger) int {
 	var res int=0
 	this.log=log
-	work_dir,lib_dir,vc_dir,out_dir,compile_all:=this.parseArgs()
+	work_dir,lib_dir,vc_dir,platform,out_dir,compile_all:=this.parseArgs()
 	if res=this.buildDir(work_dir,lib_dir,vc_dir,out_dir);res!=0{
 		log.Error("buildDir error,please check")
 		return res
@@ -94,6 +95,7 @@ func (this *Service) Init(log shlog.ILogger) int {
 	this.context = &config.Context{WorkDir: *work_dir,
 		LibDir:   *lib_dir,
 		VCDir:    *vc_dir,
+		Platform: *platform,
 		OutDir:   *out_dir,
 		CPUCount: runtime.NumCPU(),
 		IsCompileAll:strings.ToLower(*compile_all),

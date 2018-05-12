@@ -1,0 +1,1 @@
+BuildACCT.exe --WorkDir=I:\\kbss_ums\\src\\trunk\\lbm\\solution  --VCDir="E:\\Program Files (x86)\\Microsoft Visual Studio 9.0\\VC\\" --Platform="x64"  --OutDir="c:\\lbm" --CompileAll=false

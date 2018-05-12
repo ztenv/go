@@ -133,7 +133,7 @@ func (this *Compiler) compile() int {
 
 	os.Chdir(filepath.Join(this.context.WorkDir, "\\src"))
 	in := bytes.NewBuffer(nil)
-	cmd := exec.Command("cmd", "/K", filepath.Join(this.context.VCDir, "\\vcvarsall.bat"))
+	cmd := exec.Command("cmd", "/K", filepath.Join(this.context.VCDir,"\\vcvarsall.bat"),this.context.Platform)
 	cmd.Stdin = in
 	in.WriteString("make\n")
 

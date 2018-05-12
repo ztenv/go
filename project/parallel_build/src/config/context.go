@@ -8,6 +8,7 @@ type Context struct {
 	WorkDir  string
 	LibDir   string
 	VCDir    string
+	Platform string
 	OutDir   string
 	CPUCount int
 	IsCompileAll string
@@ -28,6 +29,7 @@ func (this *Context) Print() {
 	}else {
 		this.Log.Info("OutDir:%s", this.OutDir)
 	}
+	this.Log.Info("Platform:%s",this.Platform)
 	this.Log.Info("CPUCount:%d", this.CPUCount)
 	this.Log.Info("IsCompileAll:%s",this.IsCompileAll)
 }
